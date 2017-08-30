@@ -1,22 +1,22 @@
 # service.streamlink.proxy
 
 - Version: **3.0.5**
-- Github: [neverreply/service.streamlink.proxy](https://github.com/neverreply/service.streamlink.proxy)
-- Repo: [repository.neverreply](https://github.com/neverreply/repo)
+- Github: [Twilight0/service.streamlink.proxy](https://github.com/Twilight0/service.streamlink.proxy)
+- Repo: [repository.Twilight0](https://github.com/Twilight0/repo)
 
 ## Custom streamlink plugins
 
-- They can be used with [service.streamlink.plugins](https://github.com/neverreply/service.streamlink.plugins)
+- They can be used with [service.streamlink.plugins](https://github.com/Twilight0/service.streamlink.plugins)
 
 ## IPTV Simple PVR
 ```
 #EXTINF:-1 tvg-id="" tvg-shift="" tvg-name="" radio="" tvg-logo="example.png" group-title="English",Example
-http://127.0.0.1:6539/?url=https://example.com/example&q=best
+http://127.0.0.1:50165/?url=https://example.com/example&q=best
 ```
-[neverreply/service.streamlink.proxy](https://github.com/neverreply/service.streamlink.proxy)
-- `http://127.0.0.1:6539/?`
+[Twilight0/service.streamlink.proxy](https://github.com/Twilight0/service.streamlink.proxy)
+- `http://127.0.0.1:50165/?`
 *will write the stream into the buffer*
-- `http://127.0.0.1:6539/channel.m3u8?`
+- `http://127.0.0.1:50165/channel.m3u8?`
 *will redirect the hls url instead of writing it into the buffer,
 it does not work for every stream.*
 
