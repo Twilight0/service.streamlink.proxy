@@ -1,8 +1,8 @@
 # service.streamlink.proxy
 
-- Version: **3.0.5**
+- Version: **3.0.6**
 - Github: [Twilight0/service.streamlink.proxy](https://github.com/Twilight0/service.streamlink.proxy)
-- Repo: [repository.Twilight0](https://github.com/Twilight0/repo)
+- Repo: [repository.twilight0.libs](https://github.com/Twilight0/repo.twilight0.libs)
 
 ## Custom streamlink plugins
 
