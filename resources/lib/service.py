@@ -311,5 +311,5 @@ if __name__ == '__main__':
         if monitor.waitForAbort(1):
             break
 
-    httpd.server_close()
-    plugin.log_notice('Server Stops - {0} on port {1}'.format(HOST, PORT))
+ThreadedHTTPServer((HOST, PORT), MyHandler).server_close()
+plugin.log_notice('Server Stops - {0} on port {1}'.format(HOST, PORT))
