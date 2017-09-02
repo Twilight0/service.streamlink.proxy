@@ -1,6 +1,6 @@
 # service.streamlink.proxy
 
-- Version: **3.0.6**
+- Version: **3.0.7**
 - Github: [Twilight0/service.streamlink.proxy](https://github.com/Twilight0/service.streamlink.proxy)
 - Repo: [repository.twilight0.libs](https://github.com/Twilight0/repo.twilight0.libs)
 

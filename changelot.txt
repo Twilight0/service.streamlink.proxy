@@ -1,3 +1,7 @@
++ 3.0.7
+- Fixed issue which caused Kodi to hang up when closing
+- Default port is set to 50165
+
 + 3.0.6
 - Forked & created necessary source repo
 - Code cosmetics
