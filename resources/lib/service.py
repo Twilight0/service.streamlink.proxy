@@ -1,315 +1,165 @@
+# -*- coding: utf-8 -*-
+
 """
+
     ---
     Modified for Streamlink
-    https://github.com/neverreply/service.streamlink.proxy
+    https://github.com/Twilight0/service.streamlink.proxy
     ---
-    
-    XBMCLocalProxy 0.1
-    Copyright 2011 Torben Gerkensmeyer
-    
-    Modified for Livestreamer by your mom 2k15
-    
+
+    Based on beardypig's local proxy service script
+    https://github.com/beardypig/plugin.video.streamlink/blob/master/service.py
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-    
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
     MA 02110-1301, USA.
+
 """
 
+import SocketServer
 import os
-# import shutil
-import socket
-import sys
-import traceback
+import shutil
+import threading
 import urlparse
-
-from SocketServer import ThreadingMixIn
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from simpleplugin import Plugin
-from streamlink import Streamlink
-
+import streamlink
 import xbmc
-import xbmcgui
-import xbmcaddon
-
-
-__settings__ = xbmcaddon.Addon(id='service.streamlink.proxy')
-__language__ = __settings__.getLocalizedString
-
-try:
-    _path_streamlink_plugins_ = os.path.join('service.streamlink.plugins', 'plugins')
-except:
-    pass
-
-_path_streamlink_service_ = os.path.join('service.streamlink.proxy', 'resources', 'lib')
-
-_path_kodi_folder_ = os.path.dirname(os.path.realpath(__file__))
-
-try:
-    _custom_plugins_ = _path_kodi_folder_.replace(_path_streamlink_service_, _path_streamlink_plugins_)
-except:
-    pass
+from streamlink.stream import HTTPStream, HLSStream
+from SimpleHTTPServer import SimpleHTTPRequestHandler
+from simpleplugin import Plugin
 
 plugin = Plugin()
 
-HOST = '127.0.0.1'
-PORT = plugin.get_setting('listen_port')
+port = plugin.get_setting('listen_port')
+host = 'localhost'
 
 
-class MyHandler(BaseHTTPRequestHandler):
+try:
+    streamlink_plugins = os.path.join('script.module.streamlink.plugins', 'plugins')
+except:
+    pass
 
-    def do_HEAD(self):
+path_streamlink_service = os.path.join('service.streamlink.proxy', 'resources', 'lib')
 
-        """
-        Serves a HEAD request
-        """
+kodi_folder = os.path.dirname(os.path.realpath(__file__))
 
-        plugin.log_debug('Serving HEAD request...')
-        self.answer_request(0)
+try:
+    custom_plugins = kodi_folder.replace(path_streamlink_service, streamlink_plugins)
+except:
+    pass
+
+
+class ProxyHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
 
-        """
-        Serves a GET request.
-        """
-
-        plugin.log_debug('Serving GET request...')
-        self.answer_request(1)
-
-    def answer_request(self, sendData):
+        p = urlparse.urlparse(self.path)
 
         try:
-
-            p = urlparse.urlparse(self.path)
-
-            try:
-                params = dict(urlparse.parse_qsl(p.query))
-            except:
-                params = {}
-
-            if p.path == "/stop":
-                sys.exit()
-            elif p.path == "/version":
-                self.send_response(200)
-                self.end_headers()
-                self.wfile.write("Proxy: Running\r\n")
-                self.wfile.write("Version: 0.1")
-            elif p.path == '/':
-                self.serveFile(params, sendData)
-            elif p.path == '/channel.m3u8':
-                self.redirectURL(params, sendData)
-            else:
-                self.send_response(403)
-
+            params = dict(urlparse.parse_qsl(p.query))
         except:
+            params = {}
 
-            traceback.print_exc()
-            self.wfile.close()
+        plugin.log_debug(repr(params))
+
+        if params == {}:
+
+            plugin.log_debug("stream not found")
+            self.send_error(404, "Invalid stream")
             return
 
-        try:
-            self.wfile.close()
-        except:
-            pass
-
-    def redirectURL(self, params, sendData):
-
-        if (sendData):
-            url = params.get('url')
-
-            if not url:
-                xbmcgui.Dialog().notification(__language__(30202), __language__(30200), xbmcgui.NOTIFICATION_WARNING)
-                return []
-
-            quality = params.get('q', 'best')
-
-            session = Streamlink()
-            # custom streamlink plugins
-            try:
-                session.load_plugins(_custom_plugins_)
-            except:
-                pass
-
-            # <!-- ZATTOO
-            if url.startswith(('https://zattoo.com', 'https://tvonline.ewe.de', 'https://nettv.netcologne.de')):
-                plugin_email = plugin.get_setting('zattoo_email')
-                plugin_password = plugin.get_setting('zattoo_password')
-
-                if plugin_email and plugin_password:
-                    plugin.log_debug('Found Zattoo login')
-                    session.set_plugin_option('zattoo', 'email', plugin_email)
-                    session.set_plugin_option('zattoo', 'password', plugin_password)
-                else:
-                    plugin.log_debug('Missing Zattoo login')
-            # ZATTOO -->
-
-            try:
-                streams = session.streams(url)
-            except Exception:
-                traceback.print_exc(file=sys.stdout)
-                self.send_response(403)
-
-            plugin.log_debug('Sending data...')
-
-            try:
-
-                stream = streams.get(quality)
-
-                if not stream:
-                    self.send_error(404, 'Stream Not Found')
-                    return
-
-                self.send_response(301)
-                self.send_header('Location', stream.url)
-                self.end_headers()
-                return
-
-            except:
-                traceback.print_exc()
-                self.wfile.close()
-                return
-
-    def serveFile(self, params, sendData):
-
-        """
-        Sends the requested file and add additional headers.
-        """
-
-        if sendData:
-
-            url = params.get('url')
-
-            if not url:
-                xbmcgui.Dialog().notification(__language__(30202), __language__(30200), xbmcgui.NOTIFICATION_WARNING)
-                return []
-
-            quality = params.get('q', 'best')
-
-            session = Streamlink()
-            # custom streamlink plugins
-            session.load_plugins(_custom_plugins_)
-
-            # <!-- ZATTOO
-            if url.startswith(('https://zattoo.com', 'https://tvonline.ewe.de', 'https://nettv.netcologne.de')):
-                plugin_email = plugin.get_setting('zattoo_email')
-                plugin_password = plugin.get_setting('zattoo_password')
-
-                if plugin_email and plugin_password:
-                    plugin.log_debug('Found Zattoo login')
-                    session.set_plugin_option('zattoo', 'email', plugin_email)
-                    session.set_plugin_option('zattoo', 'password', plugin_password)
-                else:
-                    plugin.log_debug('Missing Zattoo login')
-            # ZATTOO -->
-
-            try:
-                streams = session.streams(url)
-            except Exception:
-                traceback.print_exc(file=sys.stdout)
-                self.send_response(403)
-
-            self.send_response(200)
-            plugin.log_debug('Sending headers...')
-            self.end_headers()
-
-            plugin.log_debug('Sending data...')
-
-            fileout = self.wfile
-
-            try:
-                stream = streams.get(quality)
-
-                if not stream:
-                    self.send_error(404, 'Stream Not Found')
-                    return
-
-                # fileout = None
-                # try:
-                #     fileout = stream.open()
-                #     shutil.copyfileobj(fileout, self.wfile)
-                # finally:
-                #     if fileout:
-                #         fileout.close()
-
-                try:
-                    response = stream.open()
-                    buf = 'INIT'
-                    while buf is not None and len(buf) > 0:
-                        buf = response.read(5000 * 1024)
-                        fileout.write(buf)
-                        fileout.flush()
-                    response.close()
-                    fileout.close()
-                    plugin.log_debug('Closing connection')
-                except socket.error:
-                    plugin.log_debug('Client Closed the connection.')
-                    try:
-                        response.close()
-                        fileout.close()
-                    except Exception:
-                        return
-                except Exception:
-                    traceback.print_exc(file=sys.stdout)
-                    response.close()
-                    fileout.close()
-            except:
-                traceback.print_exc()
-                self.wfile.close()
-                return
         else:
-            self.send_response(200)
-            plugin.log_debug('Sending headers 2 ...')
-            self.end_headers()
-        try:
-            self.wfile.close()
-        except:
-            pass
 
+            session = streamlink.Streamlink()
 
-class Server(HTTPServer):
-
-    """HTTPServer class with timeout."""
-
-    def get_request(self):
-
-        """Get the request and client address from the socket."""
-
-        self.socket.settimeout(5.0)
-        result = None
-        while result is None:
             try:
-                result = self.socket.accept()
-            except socket.timeout:
+                session.load_plugins(custom_plugins)
+            except:
                 pass
-        result[0].settimeout(1000)
-        return result
+
+            url = params.get('url')
+            quality = params.get('q', None)
+            if not quality:
+                quality = 'best'
+
+            streams = session.streams(url)
+            stream = streams.get(quality)
+
+            # ZATTOO:
+            if url.startswith(('https://zattoo.com', 'https://tvonline.ewe.de', 'https://nettv.netcologne.de')):
+                plugin_email = plugin.get_setting('zattoo_email')
+                plugin_password = plugin.get_setting('zattoo_password')
+
+                if plugin_email and plugin_password:
+                    plugin.log_debug('Found Zattoo login')
+                    session.set_plugin_option('zattoo', 'email', plugin_email)
+                    session.set_plugin_option('zattoo', 'password', plugin_password)
+                else:
+                    plugin.log_debug('Missing Zattoo login')
+
+            if not stream:
+
+                plugin.log_debug("No stream resolved")
+                self.send_error(404, "Stream not found")
+                return
+
+            elif isinstance(stream, HLSStream):
+
+                res = session.http.get(stream.url)
+
+                self.send_response(res.status_code, res.reason)
+                self.send_header("content-type", res.headers.get('content-type', 'text'))
+                self.end_headers()
+
+                for line in res.text.splitlines(False):
+                    if line and not line.startswith('#'):
+                        self.wfile.write(urlparse.urljoin(stream.url, line) + '\n')
+                    else:
+                        self.wfile.write(line + '\n')
+                return
+
+            elif isinstance(stream, HTTPStream):
+                res = session.http.get(stream.url, headers=self.headers)
+
+                self.send_response(res.status_code, res.reason)
+                for name, value in res.headers.items():
+                    self.send_header(name, value)
+                self.end_headers()
+            else:
+                self.send_response(200, "OK")
+                self.end_headers()
+
+            # return the stream
+            fh = None
+            try:
+                fh = stream.open()
+                shutil.copyfileobj(fh, self.wfile)
+            finally:
+                if fh:
+                    fh.close()
 
 
-class ThreadedHTTPServer(ThreadingMixIn, Server):
-    """Handle requests in a separate thread."""
-    allow_reuse_address = True
+if __name__ == "__main__":
 
-if __name__ == '__main__':
+    server = SocketServer.TCPServer((host, port), ProxyHandler)
 
-    sys.stderr = sys.stdout
-    server_class = ThreadedHTTPServer
-    httpd = server_class((HOST, PORT), MyHandler)
+    server_thread = threading.Thread(target=server.serve_forever)
+    server_thread.start()
 
-    plugin.log_notice('Server Starts - {0} on port {1}'.format(HOST, PORT))
     monitor = xbmc.Monitor()
-    while not monitor.abortRequested():
-        httpd.handle_request()
-        if monitor.waitForAbort(1):
-            break
 
-ThreadedHTTPServer((HOST, PORT), MyHandler).server_close()
-plugin.log_notice('Server Stops - {0} on port {1}'.format(HOST, PORT))
+    while not monitor.waitForAbort(1):
+        pass
+
+    server.shutdown()
+    server_thread.join()
