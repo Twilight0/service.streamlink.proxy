@@ -20,7 +20,6 @@
 + 4.0.0
 - Rebased service.py from beardypig's script
   > https://github.com/beardypig/plugin.video.streamlink/blob/master/service.py
--
 
 + 3.0.7
 - Fixed issue which caused Kodi to hang up when closing

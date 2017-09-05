@@ -1,17 +1,17 @@
 # service.streamlink.proxy
 
-- Version: **3.0.7**
+- Version: **4.0.0**
 - Github: [Twilight0/service.streamlink.proxy](https://github.com/Twilight0/service.streamlink.proxy)
 - Repo: [repository.twilight0.libs](https://github.com/Twilight0/repo.twilight0.libs)
 
 ## Custom streamlink plugins
 
-- They can be used with [service.streamlink.plugins](https://github.com/Twilight0/service.streamlink.plugins)
+- They can be used with [script.module.streamlink.plugins](https://github.com/Twilight0/script.module.streamlink.plugins)
 
 ## IPTV Simple PVR
 ```
 #EXTINF:-1 tvg-id="" tvg-shift="" tvg-name="" radio="" tvg-logo="example.png" group-title="English",Example
-http://127.0.0.1:50165/?url=https://example.com/example&q=best
+http://127.0.0.1:50165/?url=https%3A%2F%2Fexample.com%2Fexample&q=best
 ```
 [Twilight0/service.streamlink.proxy](https://github.com/Twilight0/service.streamlink.proxy)
 - `http://127.0.0.1:50165/?`
