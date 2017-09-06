@@ -54,6 +54,7 @@ path_streamlink_service = os.path.join('service.streamlink.proxy', 'resources', 
 kodi_folder = os.path.dirname(os.path.realpath(__file__))
 
 try:
+    # noinspection PyUnboundLocalVariable
     custom_plugins = kodi_folder.replace(path_streamlink_service, streamlink_plugins)
 except:
     pass
