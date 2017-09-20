@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 """
-
     ---
     Modified for Streamlink
     https://github.com/Twilight0/service.streamlink.proxy
@@ -24,7 +23,6 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
     MA 02110-1301, USA.
-
 """
 
 import SocketServer
@@ -34,13 +32,14 @@ import threading
 import urlparse
 import streamlink
 import xbmc
+import xbmcaddon
 from streamlink.stream import HTTPStream, HLSStream
 from SimpleHTTPServer import SimpleHTTPRequestHandler
-from simpleplugin import Plugin
 
-plugin = Plugin()
+addon = xbmcaddon.Addon()
+setting = addon.getSetting
 
-port = plugin.get_setting('listen_port')
+port = setting('listen_port')
 host = 'localhost'
 
 
@@ -71,11 +70,11 @@ class ProxyHandler(SimpleHTTPRequestHandler):
         except:
             params = {}
 
-        plugin.log_debug(repr(params))
+        xbmc.log(repr(params))
 
         if params == {}:
 
-            plugin.log_debug("stream not found")
+            xbmc.log("stream not found")
             self.send_error(404, "Invalid stream")
             return
 
@@ -98,19 +97,19 @@ class ProxyHandler(SimpleHTTPRequestHandler):
 
             # ZATTOO:
             if url.startswith(('https://zattoo.com', 'https://tvonline.ewe.de', 'https://nettv.netcologne.de')):
-                plugin_email = plugin.get_setting('zattoo_email')
-                plugin_password = plugin.get_setting('zattoo_password')
+                plugin_email = setting('zattoo_email')
+                plugin_password = setting('zattoo_password')
 
                 if plugin_email and plugin_password:
-                    plugin.log_debug('Found Zattoo login')
+                    xbmc.log('Found Zattoo login')
                     session.set_plugin_option('zattoo', 'email', plugin_email)
                     session.set_plugin_option('zattoo', 'password', plugin_password)
                 else:
-                    plugin.log_debug('Missing Zattoo login')
+                    xbmc.log('Missing Zattoo login')
 
             if not stream:
 
-                plugin.log_debug("No stream resolved")
+                xbmc.log("No stream resolved")
                 self.send_error(404, "Stream not found")
                 return
 
@@ -152,7 +151,7 @@ class ProxyHandler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
 
-    server = SocketServer.TCPServer((host, port), ProxyHandler)
+    server = SocketServer.TCPServer((host, int(port)), ProxyHandler)
 
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.start()

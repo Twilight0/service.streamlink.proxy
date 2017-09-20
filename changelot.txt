@@ -1,3 +1,8 @@
++ 4.1.0
+- Removed simpleplugin, replace functions with plain xbmc ones
+- Added a way to enter settings via control module
+- Updated dependencies
+
 + 4.0.1
 - Updated dependencies
 

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 """
-
     ---
     Modified for Streamlink
     https://github.com/Twilight0/service.streamlink.proxy
@@ -26,3 +25,9 @@
     MA 02110-1301, USA.
 
 """
+
+import xbmcaddon
+
+if __name__ == "__main__":
+
+    xbmcaddon.Addon().openSettings()
